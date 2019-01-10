@@ -5,23 +5,24 @@
 */
 
 function main() {
-	// Retrieve <canvas> element
-	var canvas = document.getElementById('webgl');
+  var window = new GL_Window("My first WebGL program", 400, 400);
+  var gl = window.GetContext();
 
-	// Get the rendering context for WebGL
-	var gl = WebGLUtils.setupWebGL(canvas);
-	if (!gl) {
-		console.log('Failed to get the rendering context for WebGL');
-		return;
-	}
-	
 	// Initialize shaders
-	program = initShaders(gl, "vshader", "fshader");
-	gl.useProgram(program);
+  var shader = new GL_Shader(gl, "Scene_Shader", "scene_vertex_shader", "scene_fragment_shader");
+  shader.Use(); // Use the shader
+  
+  console.log("It works!");
 
-	//Set up the viewport
-	gl.viewport( 0, 0, canvas.width, canvas.height );
+  var vao = new GL_VertexArrayObject(gl);
 
+  var vbo = new GL_BufferObject(gl, gl.ARRAY_BUFFER);
 
-	
+  vao.Attach(vbo);
+
+  vao.Bind();
+
+  // Can draw stuff here
+
+  vao.Unbind();
 }
