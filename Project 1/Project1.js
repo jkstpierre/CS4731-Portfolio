@@ -66,6 +66,9 @@ function handleKeyPress(e) {
 function drawInterface() {
   filemode = false;
 
+  // Set identity matrix
+  shader.SetUniformMat4("projection_matrix", flatten(ortho(0.0, 600.0, 0.0, 600.0, 0.0, 1.0)));
+
   document.getElementById("mode").innerHTML = "Draw Mode";
   document.getElementById("input_div").style.visibility = "hidden";
 }
@@ -117,6 +120,9 @@ function parseDatFile(e) {
 
       // Parse the file
 
+      // Set identity matrix
+      shader.SetUniformMat4("projection_matrix", flatten(ortho(0.0, 600.0, 0.0, 600.0, 0.0, 1.0)));
+
       for (var i = 1; i < data.length; i++) {
         var line = data[i];
 
@@ -135,6 +141,12 @@ function parseDatFile(e) {
           // File wants us to add to the last polyline
           polylines[polylines.length - 1].push([parseFloat(entry[0]), parseFloat(entry[1])]);
         }
+        else if(entry.length == 4) {
+          // File wants us to set projection matrix
+          shader.SetUniformMat4("projection_matrix", flatten(
+            ortho(parseFloat(entry[0]), parseFloat(entry[2]), parseFloat(entry[3]), parseFloat(entry[1]), 0, 1)
+          ));
+        }
       }
     }
   })(file);
@@ -147,11 +159,12 @@ function main() {
   gl = window.GetContext();
 
   document.getElementById("canvas_binding_point").appendChild(window.GetCanvas());
-  fileInterface();
 
 	// Initialize shaders
   shader = new GL_Shader(window, "Scene_Shader", "scene_vertex_shader", "scene_fragment_shader");
   shader.Use(); // Use the shader
+
+  fileInterface();
   
   console.log("It works!");
 
