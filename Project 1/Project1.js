@@ -12,16 +12,27 @@ var filemode = true;  // Track if we are in filemode or drawmode
 var color = "black";  // What color are we currently drawing with
 
 // The polylines array contains all the polylines (arrays of 2d points)
-var polylines = [];
+var polylines = [[]];
+
+var create_new_polyline = false;
 
 function handleMouseClick(e) {
-  var x = e.clientX;
-  var y = e.clientY;
+  var rect = gl.canvas.getBoundingClientRect();
 
-  // Convert to OpenGL screen coordinates
-  if (gl != null) {
-    x = x / gl.canvas.width  *  2 - 1;
-    y = y / gl.canvas.height * -2 + 1;
+  // Get mouse x y
+  var x = e.clientX - rect.left;
+  var y = e.clientY - rect.top;
+
+  // Add to polyline
+  if (x >= 0 && x < 600 && y >= 0 && y < 600) {
+    // Accept up to 100 vertices per polyline
+    if (polylines[polylines.length - 1].length == 100 || create_new_polyline == true) {
+      polylines.push([]);
+      create_new_polyline = false;
+    }
+
+    // Add vertex to polyline
+    polylines[polylines.length - 1].push([x, y]);
   }
 
   console.log(x);
@@ -35,11 +46,11 @@ function handleKeyPress(e) {
     fileInterface();
   }
 
-  if (key == "d".charCodeAt(0)) {
+  else if (key == "d".charCodeAt(0)) {
     drawInterface();
   }
 
-  if (key == "c".charCodeAt(0)) {
+  else if (key == "c".charCodeAt(0)) {
     if (color == "black") {
       color = "red";
       shader.SetUniformVec4("color", [1.0, 0.0, 0.0, 1.0]);
@@ -58,8 +69,19 @@ function handleKeyPress(e) {
     }
   }
 
+  else if (key == "b".charCodeAt(0)) {
+    create_new_polyline = true; // Set the flag
+  }
+
   console.log("Filemode: " + filemode);
   console.log(color);
+}
+
+function handleKeyRelease(e) {
+  var key = e.which || e.keyCode;
+
+  if (key == "b".charCodeAt(0))
+    create_new_polyline = false;
 }
 
 // Draws the Drawing Mode Interface
@@ -67,7 +89,10 @@ function drawInterface() {
   filemode = false;
 
   // Set identity matrix
-  shader.SetUniformMat4("projection_matrix", flatten(ortho(0.0, 600.0, 0.0, 600.0, 0.0, 1.0)));
+  shader.SetUniformMat4("projection_matrix", flatten(ortho(0.0, 600.0, 600.0, 0.0, 0.0, 1.0)));
+
+  // Empty the polylines array
+  polylines = [[]];
 
   document.getElementById("mode").innerHTML = "Draw Mode";
   document.getElementById("input_div").style.visibility = "hidden";
@@ -77,6 +102,9 @@ function drawInterface() {
 function fileInterface() {
   filemode = true;
 
+  // Empty the polylines array
+  polylines = [[]];
+
   document.getElementById("mode").innerHTML = "File Mode";
   document.getElementById("input_div").style.visibility = "visible";
 }
@@ -85,8 +113,16 @@ function drawPolylines() {
   for(var i = 0; i < polylines.length; i++) {
     var line = polylines[i];
 
-    if (line.length > 0) {
-      vbo.Bind();
+    // Bind the vbo for drawing
+    vbo.Bind();
+
+    // If only one vertex in polyline, then it is a point
+    if (line.length == 1) {
+      vbo.FillData(flatten(line), gl.STATIC_DRAW);
+
+      gl.drawArrays(gl.POINTS, 0, line.length);
+    }
+    else if (line.length > 1) {
       vbo.FillData(flatten(line), gl.STATIC_DRAW);
 
       gl.drawArrays(gl.LINE_STRIP, 0, line.length);
@@ -171,6 +207,7 @@ function main() {
   // Add input handling
   document.addEventListener("click", handleMouseClick, false);
   document.addEventListener("keypress", handleKeyPress, false);
+  document.addEventListener("keyup", handleKeyRelease, false);
   document.getElementById("file_input").addEventListener('change', parseDatFile, false);
 
   // Setup vertex buffer
