@@ -16,27 +16,30 @@ var polylines = [[]];
 
 var create_new_polyline = false;
 
+// Handle mouse clicks during draw mode
 function handleMouseClick(e) {
-  var rect = gl.canvas.getBoundingClientRect();
+  if (filemode == false) {
+    var rect = gl.canvas.getBoundingClientRect();
 
-  // Get mouse x y
-  var x = e.clientX - rect.left;
-  var y = e.clientY - rect.top;
+    // Get mouse x y
+    var x = e.clientX - rect.left;
+    var y = e.clientY - rect.top;
 
-  // Add to polyline
-  if (x >= 0 && x < 600 && y >= 0 && y < 600) {
-    // Accept up to 100 vertices per polyline
-    if (polylines[polylines.length - 1].length == 100 || create_new_polyline == true) {
-      polylines.push([]);
-      create_new_polyline = false;
+    // Add to polyline
+    if (x >= 0 && x < 600 && y >= 0 && y < 600) {
+      // Accept up to 100 vertices per polyline
+      if (polylines[polylines.length - 1].length == 100 || create_new_polyline == true) {
+        polylines.push([]);
+        create_new_polyline = false;
+      }
+
+      // Add vertex to polyline
+      polylines[polylines.length - 1].push([x, y]);
     }
 
-    // Add vertex to polyline
-    polylines[polylines.length - 1].push([x, y]);
+    console.log(x);
+    console.log(y);
   }
-
-  console.log(x);
-  console.log(y);
 }
 
 function handleKeyPress(e) {
@@ -89,7 +92,7 @@ function drawInterface() {
   filemode = false;
 
   // Set identity matrix
-  shader.SetUniformMat4("projection_matrix", flatten(ortho(0.0, 600.0, 600.0, 0.0, 0.0, 1.0)));
+  shader.SetUniformMat4("projection_matrix", ortho(0.0, 600.0, 600.0, 0.0, 0.0, 1.0));
 
   // Empty the polylines array
   polylines = [[]];
@@ -109,6 +112,7 @@ function fileInterface() {
   document.getElementById("input_div").style.visibility = "visible";
 }
 
+// Draws the polylines using OpenGL
 function drawPolylines() {
   for(var i = 0; i < polylines.length; i++) {
     var line = polylines[i];
@@ -118,12 +122,12 @@ function drawPolylines() {
 
     // If only one vertex in polyline, then it is a point
     if (line.length == 1) {
-      vbo.FillData(flatten(line), gl.STATIC_DRAW);
+      vbo.FillData(line, gl.STATIC_DRAW);
 
       gl.drawArrays(gl.POINTS, 0, line.length);
     }
     else if (line.length > 1) {
-      vbo.FillData(flatten(line), gl.STATIC_DRAW);
+      vbo.FillData(line, gl.STATIC_DRAW);
 
       gl.drawArrays(gl.LINE_STRIP, 0, line.length);
     }
@@ -157,7 +161,7 @@ function parseDatFile(e) {
       // Parse the file
 
       // Set identity matrix
-      shader.SetUniformMat4("projection_matrix", flatten(ortho(0.0, 600.0, 0.0, 600.0, 0.0, 1.0)));
+      shader.SetUniformMat4("projection_matrix", ortho(0.0, 600.0, 0.0, 600.0, 0.0, 1.0));
 
       for (var i = 1; i < data.length; i++) {
         var line = data[i];
@@ -179,9 +183,9 @@ function parseDatFile(e) {
         }
         else if(entry.length == 4) {
           // File wants us to set projection matrix
-          shader.SetUniformMat4("projection_matrix", flatten(
+          shader.SetUniformMat4("projection_matrix", 
             ortho(parseFloat(entry[0]), parseFloat(entry[2]), parseFloat(entry[3]), parseFloat(entry[1]), 0, 1)
-          ));
+          );
         }
       }
     }
@@ -201,8 +205,6 @@ function main() {
   shader.Use(); // Use the shader
 
   fileInterface();
-  
-  console.log("It works!");
 
   // Add input handling
   document.addEventListener("click", handleMouseClick, false);
