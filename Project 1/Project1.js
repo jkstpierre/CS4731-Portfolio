@@ -42,17 +42,21 @@ function handleMouseClick(e) {
   }
 }
 
+// Handle keypresses during runtime
 function handleKeyPress(e) {
   var key = e.which || e.keyCode;
 
+  // User wants to go to File mode
   if (key == "f".charCodeAt(0)) {
     fileInterface();
   }
 
+  // User wants to go to Draw mode
   else if (key == "d".charCodeAt(0)) {
     drawInterface();
   }
 
+  // User wants to change the color
   else if (key == "c".charCodeAt(0)) {
     if (color == "black") {
       color = "red";
@@ -72,6 +76,7 @@ function handleKeyPress(e) {
     }
   }
 
+  // User wants to create a new Polyline
   else if (key == "b".charCodeAt(0)) {
     create_new_polyline = true; // Set the flag
   }
@@ -149,6 +154,7 @@ function parseDatFile(e) {
   
   var reader = new FileReader();
 
+  // Read the data
   reader.onload = (function(file_object) {
     return function(evt) {
       data = evt.target.result;
@@ -170,8 +176,6 @@ function parseDatFile(e) {
         entry = entry.filter(function (e1) {
           return e1 != "";
         });
-
-        //console.log(entry);
         
         if (entry.length == 1) {
           // File wants us to make new polyline
@@ -195,6 +199,7 @@ function parseDatFile(e) {
 }
 
 function main() {
+  // Create new OpenGL context and canvas
   var window = new GL_Window("My first WebGL program", 600, 600);
   gl = window.GetContext();
 
@@ -204,6 +209,7 @@ function main() {
   shader = new GL_Shader(window, "Scene_Shader", "scene_vertex_shader", "scene_fragment_shader");
   shader.Use(); // Use the shader
 
+  // Setup File mode
   fileInterface();
 
   // Add input handling

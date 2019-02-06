@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>WebGL Example File</title>
+  
+    <script id="scene_vertex_shader" type="x-shader/x-vertex">
+
+    attribute vec3 vertex_position;
+    attribute vec3 vertex_normal;
+    
+    uniform float theta;
+
+    uniform mat4 projection_matrix;
+    uniform mat4 view_matrix;
+    uniform mat4 model_matrix;
+
+    void main() {
+      // Compute the interpolated vertex position with respect to the surface normal and theta
+      vec3 vPos = ((sin(theta + (3.0 * radians(180.0) / 2.0)) / 2.0) * vertex_normal) + vertex_position;
+
+      gl_Position = model_matrix * view_matrix * projection_matrix * vec4(vPos, 1.0);
+    }
+
+    </script>
+	
+    <script id="scene_fragment_shader" type="x-shader/x-fragment"">
+    precision mediump float;
+    
+    uniform vec4 color;
+
+    void main() {
+      gl_FragColor = color;
+    }
+
+    </script>
+	
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/initShaders.js"></script>
+    <script src="../lib/MV.js"></script>
+    <script src="../lib/webgl-toolkit.js"></script>
+
+    <script src="Project2.js"></script>
+
+  </head>
+
+  <body onload="main()">
+    <p id="mode" align="center"></label>
+
+    <div id="canvas_binding_point" style="text-align:center">
+    
+    </div>
+
+    <div id = "input_div" style="text-align:center">
+      <label for="file_input">Choose a .ply file to upload: </label>
+
+      <input type="file"
+         id="file_input" name="file_input"
+         accept=".ply">
+    </div>
+
+  </body>
+</html>
