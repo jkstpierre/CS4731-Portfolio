@@ -17,6 +17,8 @@ var vbo = null;   // Handle to the Vertex Buffer Object
 
 // A model is an array of vertices and surface normals
 var model = [];
+var vertex_count = 0;
+var poly_count = 0;
 
 // Theta value to send to shader for mesh pulsing
 var theta = 0.0;
@@ -54,20 +56,21 @@ function computeSurfaceNormal(poly) {
     normal[2] += (curr[0] - next[0]) * (curr[1] + next[1]);
   }
 
-  // Compute sum for normalization
-  var sum = normal[0] + normal[1] + normal[2];
+  // Compute magnitude for normalization
+  var magnitude = Math.sqrt(
+    (normal[0] * normal[0]) +
+    (normal[1] * normal[1]) + 
+    (normal[2] * normal[2])
+  );
 
   // Normalize the vector
-  for (var i = 0; i < normal.length; i++) {
-    normal[0] /= sum;
-    normal[1] /= sum;
-    normal[2] /= sum;
-  }
+  normal[0] /= magnitude;
+  normal[1] /= magnitude
+  normal[2] /= magnitude
 
   // Return our surface normal
   return normal;
 }
-
 
 // Parse a given .ply model file
 function parseModelFile(e) {
@@ -84,9 +87,8 @@ function parseModelFile(e) {
       // Destroy the model
       model = [];
 
-      // Temp vars
-      var vertex_count = 0;
-      var poly_count = 0;
+      vertex_count = 0;
+      poly_count = 0;
 
       // An array to store vertices (xyz)
       var vertices = [];
@@ -165,7 +167,7 @@ function parseModelFile(e) {
           var v3 = vertices[parseInt(line[3])];
 
           // Compute surface normal
-          var normal = computeSurfaceNormal([v1, v2, v3]);
+          var normal = computeSurfaceNormal([v3, v1, v2]);
         
           // Push vertices and normals into the model
           model.push(
@@ -173,6 +175,8 @@ function parseModelFile(e) {
           );
         }
       }
+
+      console.log(model);
     }
   })(file);
 
@@ -183,20 +187,13 @@ function parseModelFile(e) {
 function onLoop() {
   requestAnimationFrame(onLoop);
 
-  if (model && model.length > 0) {
-    console.log("Reading model into VBO...");
-    
-    vbo.Bind();   // Bind the VBO data
-    vbo.FillData(model, gl.STATIC_DRAW);  // Fill the VBO with the model data
-    
-    model = [];   // Clear the model data since its all on the GPU
-  }
-
+  // Handle clear color and depth buffer
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);  // Clear the color buffer
 
+  // Handle pulsing animation
   if (pulsing == true) {
-    theta += Math.PI / 60.0;
+    theta += Math.PI / 240.0;
   }
 
   // Keep theta in range of 0 - 2PI
@@ -204,6 +201,20 @@ function onLoop() {
     theta -= 2.0 * Math.PI;
   
   shader.SetUniformFloat("theta", theta); // Update theta in shader program
+
+  if (model && model.length > 0) {
+
+    vbo.Bind();   // Bind the VBO data
+
+    for (var i = 0; i < model.length; i++) {
+      var poly = model[i];
+
+      vbo.FillData(poly, gl.STATIC_DRAW);  // Fill the VBO with the model data
+
+      // Draw the polygon
+      gl.drawArrays(gl.LINE_LOOP, 0, 3);
+    }
+  }
 }
 
 // Main program function
@@ -236,11 +247,15 @@ function main() {
   // Enable depth testing
   gl.enable(gl.DEPTH_TEST);
 
-  // Set projection matrix
+  // Set default projection matrix
+  shader.SetUniformMat4("projection_matrix", perspective(45, 1, 0.1, 10000.0));
 
-  // Set view matrix
+  // Set default view matrix
+  shader.SetUniformMat4("view_matrix", lookAt([2.0, 0.0, 10.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]));
 
-  // Set model matrix
+  // Set default model matrix
+  model = new mat4();
+  shader.SetUniformMat4("model_matrix", model);
 
   // Set fragment color to white
   shader.SetUniformVec4("fragment_color", [1.0, 1.0, 1.0, 1.0]);
