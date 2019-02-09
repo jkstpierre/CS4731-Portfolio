@@ -25,11 +25,21 @@ var theta = 0.0;
 
 // Trackers
 var pulsing = false;
+var x_pos_trans = false;
+var x_neg_trans = false;
+var y_pos_trans = false;
+var y_neg_trans = false;
+var z_pos_trans = false;
+var z_neg_trans = false;
+var x_rotate = false;
 
-// Matrices
-var projection = null;    // Handle to the projection matrix
-var view = null;          // Handle to the view matrix
-var model = null;         // Handle to the model matrix
+// Model position and rotation
+var model_offset = [0.0, 0.0, 0.0];
+var model_rotation = 0.0;
+
+// Bounding box
+var max_box = [0.0, 0.0, 0.0];
+var min_box = [0.0, 0.0, 0.0];
 
 // FUNCTIONS //
 
@@ -40,6 +50,106 @@ function handleKeyPress(e) {
   // Toggle pulsing
   if (key == "b".charCodeAt(0)) {
     pulsing = !pulsing;
+  }
+
+  // Toggle positive x translation
+  else if (key == "x".charCodeAt(0)) {
+    if (x_neg_trans | x_pos_trans | y_pos_trans | y_neg_trans | z_pos_trans | z_neg_trans) {
+      x_neg_trans = false;
+      x_pos_trans = false;
+
+      y_pos_trans = false;
+      y_neg_trans = false;
+
+      z_pos_trans = false;
+      z_neg_trans = false
+    }
+    else
+      x_pos_trans = true;
+  }
+
+  // Toggle negative x translation
+  else if (key == "c".charCodeAt(0)) {
+    if (x_neg_trans | x_pos_trans | y_pos_trans | y_neg_trans | z_pos_trans | z_neg_trans) {
+      x_neg_trans = false;
+      x_pos_trans = false;
+
+      y_pos_trans = false;
+      y_neg_trans = false;
+
+      z_pos_trans = false;
+      z_neg_trans = false
+    }
+    else
+      x_neg_trans = true;
+  }
+
+  // Toggle positive y translation
+  else if (key == "y".charCodeAt(0)) {
+    if (x_neg_trans | x_pos_trans | y_pos_trans | y_neg_trans | z_pos_trans | z_neg_trans) {
+      x_neg_trans = false;
+      x_pos_trans = false;
+
+      y_pos_trans = false;
+      y_neg_trans = false;
+
+      z_pos_trans = false;
+      z_neg_trans = false
+    }
+    else
+      y_pos_trans = true;
+  }
+
+  // Toggle negative y translation
+  else if (key == "u".charCodeAt(0)) {
+    if (x_neg_trans | x_pos_trans | y_pos_trans | y_neg_trans | z_pos_trans | z_neg_trans) {
+      x_neg_trans = false;
+      x_pos_trans = false;
+
+      y_pos_trans = false;
+      y_neg_trans = false;
+
+      z_pos_trans = false;
+      z_neg_trans = false
+    }
+    else
+      y_neg_trans = true;
+  }
+
+  // Toggle positive z translation
+  else if (key == "z".charCodeAt(0)) {
+    if (x_neg_trans | x_pos_trans | y_pos_trans | y_neg_trans | z_pos_trans | z_neg_trans) {
+      x_neg_trans = false;
+      x_pos_trans = false;
+
+      y_pos_trans = false;
+      y_neg_trans = false;
+
+      z_pos_trans = false;
+      z_neg_trans = false
+    }
+    else
+      z_pos_trans = true;
+  }
+
+  // Toggle negative z translation
+  else if (key == "a".charCodeAt(0)) {
+    if (x_neg_trans | x_pos_trans | y_pos_trans | y_neg_trans | z_pos_trans | z_neg_trans) {
+      x_neg_trans = false;
+      x_pos_trans = false;
+
+      y_pos_trans = false;
+      y_neg_trans = false;
+
+      z_pos_trans = false;
+      z_neg_trans = false
+    }
+    else
+      z_neg_trans = true;
+  }
+
+  else if (key == "r".charCodeAt(0)) {
+    x_rotate = !x_rotate;
   }
 }
 
@@ -86,12 +196,17 @@ function parseModelFile(e) {
 
       // Destroy the model
       model = [];
+      max_box = [0.0, 0.0, 0.0];
+      min_box = [0.0, 0.0, 0.0];
 
       vertex_count = 0;
       poly_count = 0;
 
       // An array to store vertices (xyz)
       var vertices = [];
+      
+      // Track if first vertex or not
+      var first_vertex = true;
 
       // Parse the file
 
@@ -153,8 +268,37 @@ function parseModelFile(e) {
         else if (line.length == 3) {
           console.log("Loading a vertex");
 
+          var v1 = parseFloat(line[0]);
+          var v2 = parseFloat(line[1]);
+          var v3 = parseFloat(line[2]);
+
           // Add the vertex
-          vertices.push([parseFloat(line[0]), parseFloat(line[1]), parseFloat(line[2])]);
+          vertices.push([v1, v2, v3]);
+          
+          // If this is first vertex
+          if (first_vertex) {
+            max_box = [v1, v2, v3];
+            min_box = [v1, v2, v3];
+
+            first_vertex = false;
+          }
+          else {
+            // Compute bounding box vertices
+
+            if (max_box[0] < v1)
+              max_box[0] = v1;
+            if (max_box[1] < v2)
+              max_box[1] = v2;
+            if (max_box[2] < v3)
+              max_box[2] = v3;
+              
+            if (min_box[0] > v1)
+              min_box[0] = v1;
+            if (min_box[1] > v2)
+              min_box[1] = v2;
+            if (min_box[2] > v3)
+              min_box[2] = v3;
+          }
         }
         
         // Read in a polygon
@@ -176,7 +320,47 @@ function parseModelFile(e) {
         }
       }
 
+      // The center of the object
+      var midpoint = [(max_box[0] + min_box[0]) / 2.0, (max_box[1] + min_box[1]) / 2.0, (max_box[2] + min_box[2]) / 2.0];
+
+      // Z distance from camera to object
+      var z_distance = max_box[2] * 6;
+
+      var fov_angle = 2 * Math.atan2((max_box[1] - min_box[1]), 2 * z_distance);  // Compute field of view
+      fov_angle = 180.0 * fov_angle / Math.PI;    // Convert to degrees
+
+      console.log(fov_angle);
+
+      shader.Use();
+
+      // Set default projection matrix
+      shader.SetUniformMat4("projection_matrix", perspective(fov_angle, width / height, 0.1, 10000.0));
+
+      // Set default view matrix
+      shader.SetUniformMat4("view_matrix", lookAt([midpoint[0], midpoint[1], z_distance], midpoint, [0.0, 1.0, 0.0]));
+
+      // Reset pulsing
+      pulsing = false;
+
+      // Reset theta
+      theta = 0.0;
+      
+      // Reset offset and rotation
+      model_offset = [0.0, 0.0, 0.0];
+      model_rotation = 0.0;
+
+      // Reset movement trackers
+      x_pos_trans = false;
+      x_neg_trans = false;
+      y_pos_trans = false;
+      y_neg_trans = false;
+      z_pos_trans = false;
+      z_neg_trans = false;
+      x_rotate = false;
+
       console.log(model);
+      console.log(max_box);
+      console.log(min_box);
     }
   })(file);
 
@@ -192,8 +376,8 @@ function onLoop() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);  // Clear the color buffer
 
   // Handle pulsing animation
-  if (pulsing == true) {
-    theta += Math.PI / 240.0;
+  if (pulsing) {
+    theta += Math.PI / 120.0;
   }
 
   // Keep theta in range of 0 - 2PI
@@ -201,6 +385,40 @@ function onLoop() {
     theta -= 2.0 * Math.PI;
   
   shader.SetUniformFloat("theta", theta); // Update theta in shader program
+
+  if (x_pos_trans) {
+    model_offset[0] += 1.0 / 60.0;
+  }
+  else if (x_neg_trans) {
+    model_offset[0] -= 1.0 / 60.0;
+  }
+  else if (y_pos_trans) {
+    model_offset[1] += 1.0 / 60.0;
+  }
+  else if (y_neg_trans) {
+    model_offset[1] -= 1.0 / 60.0;
+  }
+  else if (z_pos_trans) {
+    model_offset[2] += 1.0 / 60.0;
+  }
+  else if (z_neg_trans) {
+    model_offset[2] -= 1.0 / 60.0;
+  }
+
+  // Rotate model if necessary
+  if (x_rotate) {
+    model_rotation += Math.PI / 120.0;
+  }
+
+  // Keep rotation in reasonable range
+  if (model_rotation > 2.0 * Math.PI) 
+    model_rotation -= 2.0 * Math.PI;
+
+  // Translate model matrix
+  let model_matrix = mult(translate(model_offset[0], model_offset[1], model_offset[2]), rotateX(180.0 * model_rotation / Math.PI));
+
+  // Send model matrix to shader
+  shader.SetUniformMat4("model_matrix", model_matrix);
 
   if (model && model.length > 0) {
 
@@ -254,11 +472,13 @@ function main() {
   shader.SetUniformMat4("view_matrix", lookAt([2.0, 0.0, 10.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]));
 
   // Set default model matrix
-  model = new mat4();
-  shader.SetUniformMat4("model_matrix", model);
+  shader.SetUniformMat4("model_matrix", mat4());
 
   // Set fragment color to white
   shader.SetUniformVec4("fragment_color", [1.0, 1.0, 1.0, 1.0]);
+
+  // Setup viewport
+  gl.viewport(0, 0, width, height);
 
   onLoop();
 }

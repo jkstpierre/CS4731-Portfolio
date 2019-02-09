@@ -23,3 +23,10 @@ draw their own shapes. To enable File mode press "f" during runtime; to enable D
 during runtime. Additionally the colors of the polylines can be changed at anytime by pressing "c" to cycle
 between {black, red, green, blue}. Lastly in Draw mode, the user can force the creation of new polylines
 by pressing "b".
+
+## Project 2
+
+Inside the "Project 2" folder exists the Project2.html and Project2.js files. To run the program, simply click on Project2.html and it will 
+automatically be loaded into your browser of choice. Additionally, there is a data folder which contains the .ply models to be loaded in for viewing.
+
+Once the program has been started, one can load in a .ply file by clicking the "Browse" button below the canvas. After a model has been loaded,
