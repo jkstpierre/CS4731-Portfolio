@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>WebGL Example File</title>
+  
+    <script id="scene_vertex_shader" type="x-shader/x-vertex">
+
+    attribute vec4 vertex_position;
+    attribute vec4 vertex_normal;
+    attribute vec2 vertex_uv;
+
+    uniform mat4 projection_matrix;
+    uniform mat4 view_matrix;
+    uniform mat4 model_matrix;
+
+    uniform vec4 diffuse_product, specular_product;
+    uniform vec4 light_pos;
+    uniform float shininess;
+
+    varying vec4 fColor;
+    varying vec2 fTexCoord;
+    varying vec3 refraction;
+    varying vec3 reflection;
+
+    void main() {
+      mat4 modelViewMatrix = view_matrix * model_matrix;
+
+      vec3 pos = (modelViewMatrix * vertex_position).xyz;
+
+      vec3 L = normalize(light_pos.xyz - pos);
+
+      vec3 V = normalize(-pos);
+
+      vec3 N = normalize(modelViewMatrix * vertex_normal).xyz;
+
+      vec3 R = (2.0 * dot(L, N) * N) - L;
+
+      vec4 diffuse = diffuse_product * dot(L, N);
+      vec4 specular = specular_product * pow(max(dot(V, R), 0.0), shininess);
+
+      fColor = diffuse + specular;
+      fColor.a = 1.0;
+
+      fTexCoord = vertex_uv;
+      refraction = refract(pos, N, 0.5);
+      reflection = R;
+
+      gl_Position = projection_matrix * modelViewMatrix * vertex_position;
+    }
+
+    </script>
+	
+    <script id="scene_fragment_shader" type="x-shader/x-fragment"">
+    precision mediump float;
+    
+    uniform vec4 material_color;
+    uniform vec4 light_ambient;
+    uniform float wireframe;
+    uniform float use_light;
+    uniform float use_texture;
+    uniform float use_cubemap;
+    uniform float use_reflection;
+    uniform float use_refraction;
+
+    varying vec4 fColor;
+    varying vec2 fTexCoord;
+
+    uniform sampler2D texture;
+    uniform samplerCube cubemap;
+    varying vec3 refraction;
+    varying vec3 reflection;
+
+    void main() {
+      vec4 color = material_color;
+
+      if (wireframe == 1.0)
+        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+      else {
+        if (use_cubemap == 1.0) 
+          //if (use_reflection == 1.0)
+            color = textureCube(cubemap, reflection);
+          //if (use_refraction == 1.0)
+            //color = textureCube(cubemap, refraction);
+        else if (use_texture == 1.0)
+          color = texture2D(texture, fTexCoord);
+
+        if (use_light == 1.0)
+          color = color * light_ambient + fColor;
+
+        gl_FragColor = color;
+      }
+    }
+
+    </script>
+	
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/initShaders.js"></script>
+    <script src="../lib/MV.js"></script>
+    <script src="../lib/webgl-toolkit.js"></script>
+
+    <script src="Project4.js"></script>
+
+  </head>
+
+  <body onload="main()">
+    <p id="mode" align="center"></label>
+
+    <div id="canvas_binding_point" style="text-align:center">
+    </div>
+
+  </body>
+</html>

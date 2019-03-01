@@ -16,8 +16,10 @@
     uniform mat4 model_matrix;
 
     void main() {
+      float pos_magnitude = sqrt(pow(vertex_position.x, 2.0) + pow(vertex_position.y, 2.0) + pow(vertex_position.z, 2.0));
+
       // Compute the interpolated vertex position with respect to the surface normal and theta
-      vec3 vPos = ((sin(theta + (3.0 * radians(180.0) / 2.0)) + 1.0) / 2.0) * vertex_normal + vertex_position;
+      vec3 vPos = ((sin(theta + (3.0 * radians(180.0) / 2.0)) + 1.0) / 2.0) * (pos_magnitude / 4.0) *  vertex_normal + vertex_position;
 
       gl_Position = projection_matrix * view_matrix * model_matrix * vec4(vPos, 1.0);
     }

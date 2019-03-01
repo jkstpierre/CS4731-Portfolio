@@ -23,6 +23,9 @@ var poly_count = 0;
 // Theta value to send to shader for mesh pulsing
 var theta = 0.0;
 
+// Scale value for model translations (accounts for size of model)
+var scale = 1.0;
+
 // Trackers
 var pulsing = false;
 var x_pos_trans = false;
@@ -331,6 +334,9 @@ function parseModelFile(e) {
 
       console.log(fov_angle);
 
+      // Compute scale for model transformations
+      scale = Math.abs(midpoint[2] - z_distance);
+
       shader.Use();
 
       // Set default projection matrix
@@ -386,23 +392,24 @@ function onLoop() {
   
   shader.SetUniformFloat("theta", theta); // Update theta in shader program
 
+  // Handle model translations
   if (x_pos_trans) {
-    model_offset[0] += 1.0 / 60.0;
+    model_offset[0] += scale / 60.0;
   }
   else if (x_neg_trans) {
-    model_offset[0] -= 1.0 / 60.0;
+    model_offset[0] -= scale / 60.0;
   }
   else if (y_pos_trans) {
-    model_offset[1] += 1.0 / 60.0;
+    model_offset[1] += scale / 60.0;
   }
   else if (y_neg_trans) {
-    model_offset[1] -= 1.0 / 60.0;
+    model_offset[1] -= scale / 60.0;
   }
   else if (z_pos_trans) {
-    model_offset[2] += 1.0 / 60.0;
+    model_offset[2] += scale / 60.0;
   }
   else if (z_neg_trans) {
-    model_offset[2] -= 1.0 / 60.0;
+    model_offset[2] -= scale / 60.0;
   }
 
   // Rotate model if necessary
@@ -420,10 +427,10 @@ function onLoop() {
   // Send model matrix to shader
   shader.SetUniformMat4("model_matrix", model_matrix);
 
+  vbo.Bind();   // Bind the VBO
+
+  // Draw the model
   if (model && model.length > 0) {
-
-    vbo.Bind();   // Bind the VBO data
-
     for (var i = 0; i < model.length; i++) {
       var poly = model[i];
 
@@ -480,5 +487,6 @@ function main() {
   // Setup viewport
   gl.viewport(0, 0, width, height);
 
+  // Begin loop
   onLoop();
 }
